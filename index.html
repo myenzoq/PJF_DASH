@@ -388,6 +388,16 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            // Set default date to today for both date input fields
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(today.getDate()).padStart(2, '0');
+            const formattedToday = `${year}-${month}-${day}`;
+
+            document.getElementById('date-search').value = formattedToday;
+            document.getElementById('date-search-end').value = formattedToday;
+
             // Global event listeners for the single search and reset controls
             document.getElementById('date-search').addEventListener('change', filterAllTablesByDate);
             document.getElementById('date-search-end').addEventListener('change', filterAllTablesByDate); // New event listener for end date
@@ -403,7 +413,9 @@
             };
             const table1Instance = await initializeTable(table1Config);
             allTableInstances.push(table1Instance);
-            renderTable(table1Instance, table1Instance.allData, table1Instance.csvHeaders);
+            // After initial load, apply the default filter
+            filterAllTablesByDate();
+
 
             // Configuration for Table 2
             const table2Config = {
@@ -415,7 +427,8 @@
             };
             const table2Instance = await initializeTable(table2Config);
             allTableInstances.push(table2Instance);
-            renderTable(table2Instance, table2Instance.allData, table2Instance.csvHeaders);
+            // After initial load, apply the default filter
+            filterAllTablesByDate();
         });
     </script>
 </body>
