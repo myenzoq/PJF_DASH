@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Hours Tracker</title>
+    <title>PK PD TABLE</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -28,6 +28,10 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        /* Ensure table cells don't wrap unless necessary for long content */
+        .whitespace-nowrap {
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -35,233 +39,357 @@
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg">
         <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Project Hours Tracker</h1>
 
-        <!-- Important instructions for the user to publish their Google Sheet -->
-        <p class="text-sm text-gray-600 mb-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 rounded-md">
-            <strong>Important:</strong> To make your Google Sheet data accessible, please publish it to the web as a CSV file. Go to your Google Sheet, then <code>File &gt; Share &gt; Publish to web</code>, select the sheet (e.g., "Sheet1"), choose "Comma-separated values (.csv)", and copy the generated URL. Replace the <code>googleSheetCsvUrl</code> in the JavaScript section with your copied URL.
-        </p>
-
-        <!-- Date search input and reset button -->
+        <!-- Global Date search input and reset button -->
         <div class="flex flex-col sm:flex-row items-center justify-between mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
             <div class="relative w-full sm:w-1/2">
-                <label for="date-search" class="block text-gray-700 text-sm font-medium mb-2">Search by Date:</label>
+                <label for="date-search" class="block text-gray-700 text-sm font-medium mb-2">Search by Date (ควบคุมทั้งสองตาราง):</label>
                 <input type="date" id="date-search" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 shadow-sm">
             </div>
             <button id="reset-button" class="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-200 shadow">
-                Reset Filter
+                Reset Filter (ล้างข้อมูลทั้งสองตาราง)
             </button>
         </div>
 
-        <!-- Message area for loading status or errors -->
-        <div id="message-area" class="mb-4 text-center text-gray-600">Loading data...</div>
-
-        <!-- Table container for responsiveness and styling -->
+        <!-- Table 1 Section -->
+        <h2 class="text-2xl font-bold text-center mb-4 text-gray-700">ตารางวางแผน PK</h2>
+        <!-- Message area for loading status or errors for Table 1 -->
+        <div id="message-area-1" class="mb-4 text-center text-gray-600">Loading data...</div>
+        <!-- Table container for responsiveness and styling for Table 1 -->
         <div class="overflow-x-auto rounded-lg shadow-md border border-gray-200">
             <table class="min-w-full divide-y divide-gray-200 bg-white">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
-                    </tr>
+                <thead class="bg-gray-50" id="data-table-head-1">
+                    <tr></tr> <!-- Placeholder for headers -->
                 </thead>
-                <tbody id="data-table-body" class="bg-white divide-y divide-gray-200">
+                <tbody id="data-table-body-1" class="bg-white divide-y divide-gray-200">
                     <!-- Table rows will be dynamically inserted here by JavaScript -->
                 </tbody>
             </table>
         </div>
-        <!-- Message displayed when no results match the filter -->
-        <div id="no-results-message" class="text-center text-gray-500 mt-4 hidden">No results found for the selected date.</div>
+        <!-- Message displayed when no results match the filter for Table 1 -->
+        <div id="no-results-message-1" class="text-center text-gray-500 mt-4 hidden">No results found for the selected date.</div>
     </div>
 
+    <!-- Second Table Section -->
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg mt-8">
+        <h2 class="text-2xl font-bold text-center mb-4 text-gray-700">ตารางวางแผน PD</h2>
+        <!-- Message area for loading status or errors for Table 2 -->
+        <div id="message-area-2" class="mb-4 text-center text-gray-600">กำลังโหลดข้อมูล...</div>
+
+        <!-- Table container for responsiveness and styling for Table 2 -->
+        <div class="overflow-x-auto rounded-lg shadow-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200 bg-white">
+                <thead class="bg-gray-50" id="data-table-head-2">
+                    <tr></tr> <!-- Placeholder for headers -->
+                </thead>
+                <tbody id="data-table-body-2" class="bg-white divide-y divide-gray-200">
+                    <!-- Table rows will be dynamically inserted here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        <!-- Message displayed when no results match the filter for Table 2 -->
+        <div id="no-results-message-2" class="text-center text-gray-500 mt-4 hidden">ไม่พบผลลัพธ์สำหรับวันที่เลือก.</div>
+    </div>
+
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // !!! IMPORTANT: Replace this URL with your published Google Sheet CSV URL !!!
-            // Steps to get the URL:
-            // 1. Go to your Google Sheet.
-            // 2. Click on 'File' > 'Share' > 'Publish to web'.
-            // 3. In the dialog, select the specific sheet (e.g., 'Sheet1') and choose 'Comma-separated values (.csv)' from the dropdown.
-            // 4. Click 'Publish' and copy the generated URL.
-            const googleSheetCsvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSqLlTY-5GngpcjbLCoVxRz9VhfYz4l9w23gB6P4oyy0C2ZmlbgfywhvGivZID6yn8QuxYShnqEcVqC/pub?gid=0&single=true&output=csv';
+        // Global variables to store all table instances
+        const allTableInstances = [];
 
-            // Get references to DOM elements
-            const dataTableBody = document.getElementById('data-table-body');
-            const dateSearchInput = document.getElementById('date-search');
-            const resetButton = document.getElementById('reset-button');
-            const messageArea = document.getElementById('message-area');
-            const noResultsMessage = document.getElementById('no-results-message');
-
-            let allData = []; // Array to store all fetched data from the CSV
-
-            /**
-             * Fetches CSV data from the specified URL using the Fetch API.
-             * @param {string} url - The URL of the CSV file.
-             * @returns {Promise<string|null>} - A promise that resolves with the CSV text string, or null if an error occurs.
-             */
-            async function fetchCsvData(url) {
-                try {
-                    messageArea.textContent = 'Loading data...'; // Display loading message
-                    const response = await fetch(url);
-                    // Check if the HTTP response was successful
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}. Please ensure the URL is correct and publicly accessible.`);
-                    }
-                    return await response.text(); // Return the response body as text
-                } catch (error) {
-                    // Display error message to the user and log to console
-                    messageArea.textContent = `Failed to load data: ${error.message}.`;
-                    console.error('Fetch error:', error);
-                    return null;
+        /**
+         * Fetches CSV data from the specified URL using the Fetch API.
+         * @param {string} url - The URL of the CSV file.
+         * @param {HTMLElement} messageAreaElement - The DOM element to display messages.
+         * @returns {Promise<string|null>} - A promise that resolves with the CSV text string, or null if an error occurs.
+         */
+        async function fetchCsvData(url, messageAreaElement) {
+            try {
+                messageAreaElement.textContent = 'Loading data...'; // Display loading message
+                const response = await fetch(url);
+                // Check if the HTTP response was successful
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}. This often means the URL is wrong or the sheet isn't publicly accessible.`);
                 }
+                const csvText = await response.text();
+                console.log('Fetched CSV Data (raw):', csvText.substring(0, 500) + '...'); // Log first 500 chars
+                return csvText;
+            } catch (error) {
+                // Display error message to the user and log to console
+                messageAreaElement.textContent = `Failed to load data: ${error.message}. Please check the browser console (F12) for more details, especially the Network tab.`;
+                console.error('Fetch error:', error);
+                return null;
+            }
+        }
+
+        /**
+         * Parses CSV text into an array of JavaScript objects.
+         * Assumes the first row of the CSV is the header row.
+         * Each object in the array represents a row, with keys being the header names.
+         * Handles multiple date formats for the 'date' column.
+         * @param {string} csvText - The CSV data as a single string.
+         * @returns {{headers: Array<string>, data: Array<Object>}} - An object containing headers and parsed data.
+         */
+        function parseCsv(csvText) {
+            if (!csvText) {
+                console.warn('No CSV text provided for parsing.');
+                return { headers: [], data: [] };
             }
 
-            /**
-             * Parses CSV text into an array of JavaScript objects.
-             * Assumes the first row of the CSV is the header row.
-             * Each object in the array represents a row, with keys being the header names.
-             * @param {string} csvText - The CSV data as a single string.
-             * @returns {Array<Object>} - An array of objects, where each object is a row of data.
-             */
-            function parseCsv(csvText) {
-                if (!csvText) return []; // Return empty array if no text provided
-
-                // Split the CSV text into individual lines and filter out empty lines
-                const lines = csvText.split('\n').filter(line => line.trim() !== '');
-                if (lines.length === 0) return []; // Return empty if no valid lines
-
-                // Extract headers from the first line, trimming whitespace
-                const headers = lines[0].split(',').map(header => header.trim());
-                const data = []; // Array to store parsed data objects
-
-                // Iterate over the rest of the lines (data rows)
-                for (let i = 1; i < lines.length; i++) {
-                    // Split values by comma and trim whitespace
-                    const values = lines[i].split(',').map(value => value.trim());
-
-                    // Basic validation: ensure number of values matches number of headers
-                    if (values.length !== headers.length) {
-                        console.warn(`Skipping malformed row due to mismatched column count: ${lines[i]}`);
-                        continue; // Skip this row if it's malformed
-                    }
-
-                    const row = {}; // Create an object for the current row
-                    // Map values to their corresponding headers
-                    headers.forEach((header, index) => {
-                        row[header] = values[index];
-                    });
-                    data.push(row); // Add the parsed row object to the data array
-                }
-                return data;
+            // Split the CSV text into individual lines and filter out empty lines
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) {
+                console.warn('CSV text contains no valid lines after splitting.');
+                return { headers: [], data: [] };
             }
 
-            /**
-             * Renders the provided data into the HTML table.
-             * Clears existing rows before adding new ones.
-             * Displays a "no results" message if the data array is empty.
-             * @param {Array<Object>} data - The array of data objects to be displayed in the table.
-             */
-            function renderTable(data) {
-                dataTableBody.innerHTML = ''; // Clear all existing table rows
+            // Extract headers from the first line, trimming whitespace and potential byte order marks (BOM)
+            const headers = lines[0].split(',').map(header => header.trim().replace(/^\uFEFF/, ''));
+            console.log('Parsed CSV Headers:', headers);
 
-                if (data.length === 0) {
-                    noResultsMessage.classList.remove('hidden'); // Show "no results" message
-                    messageArea.textContent = ''; // Clear any loading/error message
-                    return;
+            const data = []; // Array to store parsed data objects
+
+            // Iterate over the rest of the lines (data rows)
+            for (let i = 1; i < lines.length; i++) {
+                // Split values by comma. Use a regex to handle commas inside quoted fields (though Google Sheets CSV usually handles this).
+                // For simplicity with basic CSV, we'll split by comma directly, assuming no embedded commas in data.
+                const values = lines[i].split(',').map(value => value.trim());
+
+                // Basic validation: ensure number of values matches number of headers
+                if (values.length !== headers.length) {
+                    console.warn(`Skipping malformed row due to mismatched column count (${values.length} values vs ${headers.length} headers): "${lines[i]}"`);
+                    continue; // Skip this row if it's malformed
                 }
-                noResultsMessage.classList.add('hidden'); // Hide "no results" message if there is data
 
-                // Iterate over each row of data and create a table row element
-                data.forEach(rowData => {
-                    const row = document.createElement('tr');
-                    row.classList.add('hover:bg-gray-50', 'transition-colors', 'duration-150'); // Add hover effect
-
-                    // Safely format the date for display. Assumes rowData.Date is like "M/D/YYYY" or "MM/DD/YYYY".
-                    const displayDate = rowData.Date ?
-                        new Date(rowData.Date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                        }) : '';
-
-                    // Populate the row with table data cells. Use || '' to handle undefined/null values gracefully.
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${displayDate}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${rowData.Project || ''}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${rowData.Hours || ''}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${rowData.Notes || ''}</td>
-                    `;
-                    dataTableBody.appendChild(row); // Append the new row to the table body
+                const row = {}; // Create an object for the current row
+                // Map values to their corresponding headers
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
                 });
-                messageArea.textContent = ''; // Clear any loading message once table is rendered
+
+                // --- Date format standardization for the 'date' column ---
+                // This will try to convert DD/MM/YYYY to INSEE-MM-DD for consistent Date object creation
+                if (row.date) {
+                    const dateParts = row.date.split(/[\/-]/); // Split by / or -
+                    if (dateParts.length === 3) {
+                        // Check for DD/MM/YYYY format based on typical length of parts (e.g., 17/06/2025)
+                        if (dateParts[0].length === 2 && dateParts[1].length === 2 && dateParts[2].length === 4) {
+                            // Reformat to INSEE-MM-DD
+                            row.date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                        }
+                        // If it's already INSEE-MM-DD (e.g., 2025-06-17), it's fine as is.
+                        // Other formats (e.g., M/D/YYYY) will rely on new Date() parsing directly,
+                        // which can be inconsistent across browsers but INSEE-MM-DD is robust.
+                    }
+                }
+                // --- End Date format standardization ---
+
+                data.push(row); // Add the parsed row object to the data array
+            }
+            console.log('Parsed Data (first 5 rows):', data.slice(0, 5)); // Log first 5 parsed rows
+            return { headers, data };
+        }
+
+        /**
+         * Initializes a single table instance on the page by fetching and parsing its data.
+         * @param {object} tableConfig - Configuration object for the table.
+         * @param {string} tableConfig.csvUrl - The URL of the CSV data.
+         * @param {string} tableConfig.tableHeadId - ID of the <thead> element.
+         * @param {string} tableConfig.tableBodyId - ID of the <tbody> element.
+         * @param {string} tableConfig.messageAreaId - ID of the message area element.
+         * @param {string} tableConfig.noResultsMessageId - ID of the no results message element.
+         * @returns {Promise<object>} A promise that resolves with an object containing table data and DOM references.
+         */
+        async function initializeTable(tableConfig) {
+            const {
+                csvUrl,
+                tableHeadId,
+                tableBodyId,
+                messageAreaId,
+                noResultsMessageId
+            } = tableConfig;
+
+            const dataTableHead = document.getElementById(tableHeadId);
+            const dataTableBody = document.getElementById(tableBodyId);
+            const messageArea = document.getElementById(messageAreaId);
+            const noResultsMessage = document.getElementById(noResultsMessageId);
+
+            let allData = [];
+            let csvHeaders = [];
+
+            try {
+                const csvText = await fetchCsvData(csvUrl, messageArea);
+                if (csvText) {
+                    const parsedResult = parseCsv(csvText);
+                    allData = parsedResult.data;
+                    csvHeaders = parsedResult.headers;
+
+                    if (allData.length === 0) {
+                        messageArea.textContent = 'Data loaded, but no rows were parsed. Check CSV format and headers.';
+                        noResultsMessage.classList.remove('hidden');
+                    }
+                } else {
+                    // messageArea already set by fetchCsvData in case of error
+                }
+            } catch (error) {
+                console.error(`Error initializing table ${tableBodyId}:`, error);
+                messageArea.textContent = `Error initializing table: ${error.message}`;
             }
 
-            /**
-             * Filters the 'allData' based on the date selected in the date input field.
-             * Compares dates by year, month, and day to ignore time components.
-             */
-            function filterDataByDate() {
-                const selectedDate = dateSearchInput.value; // Gets date in YYYY-MM-DD format from input
-                if (!selectedDate) {
-                    renderTable(allData); // If no date is selected, display all data
+            return {
+                allData,
+                csvHeaders,
+                dataTableHead,
+                dataTableBody,
+                messageArea,
+                noResultsMessage
+            };
+        }
+
+        /**
+         * Renders the provided data into the HTML table for a given table instance.
+         * Clears existing rows before adding new ones.
+         * Displays a "no results" message if the data array is empty.
+         * @param {object} instance - The table instance object.
+         * @param {Array<Object>} dataToRender - The array of data objects to be displayed.
+         * @param {Array<string>} headersToRender - The array of column headers to be used.
+         */
+        function renderTable(instance, dataToRender, headersToRender) {
+            instance.dataTableBody.innerHTML = ''; // Clear all existing table rows
+            instance.dataTableHead.innerHTML = '<tr></tr>'; // Clear and re-create header row
+
+            // Dynamically create table headers
+            const headerRow = instance.dataTableHead.querySelector('tr');
+            headersToRender.forEach(headerText => {
+                const th = document.createElement('th');
+                th.scope = 'col';
+                th.classList.add('px-6', 'py-3', 'text-left', 'text-xs', 'font-medium', 'text-gray-500', 'uppercase', 'tracking-wider', 'whitespace-nowrap');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+
+            if (dataToRender.length === 0) {
+                instance.noResultsMessage.classList.remove('hidden'); // Show "no results" message
+                instance.messageArea.textContent = ''; // Clear any loading/error message
+                return;
+            }
+            instance.noResultsMessage.classList.add('hidden'); // Hide "no results" message if there is data
+
+            // Iterate over each row of data and create a table row element
+            dataToRender.forEach(rowData => {
+                const row = document.createElement('tr');
+                row.classList.add('hover:bg-gray-50', 'transition-colors', 'duration-150'); // Add hover effect
+
+                headersToRender.forEach(header => {
+                    const td = document.createElement('td');
+                    td.classList.add('px-6', 'py-4', 'whitespace-nowrap', 'text-sm', 'text-gray-900');
+
+                    let cellValue = rowData[header] || '';
+
+                    // Special handling for 'date' column for display formatting
+                    if (header === 'date' && cellValue) {
+                        try {
+                            const dateObj = new Date(cellValue);
+                            if (!isNaN(dateObj.getTime())) { // Check if the date is valid using getTime()
+                                cellValue = dateObj.toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                });
+                            } else {
+                                // If date is invalid after parsing, just show the raw value or empty
+                                console.warn(`Invalid Date encountered for display in column "${header}": "${cellValue}".`);
+                                cellValue = rowData[header] || ''; // Fallback to raw value
+                            }
+                        } catch (e) {
+                            console.error(`Error processing date "${cellValue}" for display:`, e);
+                            cellValue = rowData[header] || ''; // Fallback to raw value
+                        }
+                    }
+                    td.textContent = cellValue;
+                    row.appendChild(td);
+                });
+                instance.dataTableBody.appendChild(row); // Append the new row to the table body
+            });
+            instance.messageArea.textContent = ''; // Clear any loading message once table is rendered
+        }
+
+        /**
+         * Filters all initialized tables based on the date selected in the global date input field.
+         */
+        function filterAllTablesByDate() {
+            const selectedDate = document.getElementById('date-search').value; // Gets date in INSEE-MM-DD format from input
+            const searchDateObj = selectedDate ? new Date(selectedDate) : null;
+
+            if (searchDateObj) {
+                // Normalize search date for consistent comparison
+                searchDateObj.setMinutes(searchDateObj.getMinutes() + searchDateObj.getTimezoneOffset());
+                console.log('Global Search Date (normalized):', searchDateObj.toISOString().split('T')[0]);
+            }
+
+            allTableInstances.forEach(instance => {
+                if (!searchDateObj) {
+                    renderTable(instance, instance.allData, instance.csvHeaders); // If no date, show all data
                     return;
                 }
 
-                // Create a Date object from the selected input date (YYYY-MM-DD)
-                // Adjust for local timezone to ensure day comparison is accurate regardless of UTC offset
-                const searchDateObj = new Date(selectedDate);
-                searchDateObj.setMinutes(searchDateObj.getMinutes() + searchDateObj.getTimezoneOffset());
+                const filteredData = instance.allData.filter(row => {
+                    if (!row.date) return false; // Skip rows with no date defined
 
+                    const rowDateObj = new Date(row.date);
 
-                const filteredData = allData.filter(row => {
-                    if (!row.Date) return false; // Skip rows with no date defined
+                    if (isNaN(rowDateObj.getTime())) {
+                        console.warn(`Skipping row with invalid date format (filter) in table ${instance.dataTableBody.id}: "${row.date}"`);
+                        return false;
+                    }
 
-                    // Create a Date object from the row's date string (e.g., "5/1/2024")
-                    // Adjust for local timezone for the row date as well
-                    const rowDateObj = new Date(row.Date);
                     rowDateObj.setMinutes(rowDateObj.getMinutes() + rowDateObj.getTimezoneOffset());
 
-                    // Compare the year, month, and day of both dates
-                    return rowDateObj.getDate() === searchDateObj.getDate() &&
-                           rowDateObj.getMonth() === searchDateObj.getMonth() &&
-                           rowDateObj.getFullYear() === searchDateObj.getFullYear();
+                    const match = rowDateObj.getDate() === searchDateObj.getDate() &&
+                                  rowDateObj.getMonth() === searchDateObj.getMonth() &&
+                                  rowDateObj.getFullYear() === searchDateObj.getFullYear();
+                    return match;
                 });
+                renderTable(instance, filteredData, instance.csvHeaders);
+            });
+        }
 
-                renderTable(filteredData); // Render the filtered data
-            }
+        /**
+         * Resets the global date filter input and displays all original data for all tables.
+         */
+        function resetAllTablesFilter() {
+            document.getElementById('date-search').value = ''; // Clear the global date input field
+            allTableInstances.forEach(instance => {
+                renderTable(instance, instance.allData, instance.csvHeaders); // Render all original data for each table
+            });
+        }
 
-            /**
-             * Resets the date filter input field and displays all original data.
-             */
-            function resetFilter() {
-                dateSearchInput.value = ''; // Clear the date input field
-                renderTable(allData); // Render all original data
-            }
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Global event listeners for the single search and reset controls
+            document.getElementById('date-search').addEventListener('change', filterAllTablesByDate);
+            document.getElementById('reset-button').addEventListener('click', resetAllTablesFilter);
 
-            // --- Event Listeners ---
-            dateSearchInput.addEventListener('change', filterDataByDate); // Trigger filter when date input changes
-            resetButton.addEventListener('click', resetFilter); // Trigger reset when reset button is clicked
+            // Configuration for Table 1
+            const table1Config = {
+                csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSqLlTY-5GngpcjbLCoVxRz9VhfYz4l9w23gB6P4oyy0C2ZmlbgfywhvGivZID6yn8QuxYShnqEcVqC/pub?gid=0&single=true&output=csv',
+                tableHeadId: 'data-table-head-1',
+                tableBodyId: 'data-table-body-1',
+                messageAreaId: 'message-area-1',
+                noResultsMessageId: 'no-results-message-1'
+            };
+            const table1Instance = await initializeTable(table1Config);
+            allTableInstances.push(table1Instance);
+            renderTable(table1Instance, table1Instance.allData, table1Instance.csvHeaders);
 
-            // --- Initial Data Load ---
-            // Check if the user has replaced the placeholder URL
-            if (googleSheetCsvUrl === 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSqLlTY-5GngpcjbLCoVxRz9VhfYz4l9w23gB6P4oyy0C2ZmlbgfywhvGivZID6yn8QuxYShnqEcVqC/pub?gid=0&single=true&output=csv') {
-                messageArea.textContent = 'Please update the `googleSheetCsvUrl` in the JavaScript with your published Google Sheet CSV URL as instructed above.';
-            } else {
-                // Fetch data when the page loads
-                fetchCsvData(googleSheetCsvUrl)
-                    .then(csvText => {
-                        if (csvText) {
-                            allData = parseCsv(csvText); // Parse the fetched CSV
-                            renderTable(allData); // Render the initial table
-                        } else {
-                            messageArea.textContent = 'Could not load data. Please ensure the CSV URL is correct and accessible.';
-                        }
-                    })
-                    .catch(error => {
-                        // Catch any errors during the promise chain
-                        messageArea.textContent = `An unexpected error occurred during data processing: ${error.message}`;
-                        console.error('Error during data processing:', error);
-                    });
-            }
+            // Configuration for Table 2
+            const table2Config = {
+                csvUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSqLlTY-5GngpcjbLCoVxRz9VhfYz4l9w23gB6P4oyy0C2ZmlbgfywhvGivZID6yn8QuxYShnqEcVqC/pub?gid=777005749&single=true&output=csv',
+                tableHeadId: 'data-table-head-2',
+                tableBodyId: 'data-table-body-2',
+                messageAreaId: 'message-area-2',
+                noResultsMessageId: 'no-results-message-2'
+            };
+            const table2Instance = await initializeTable(table2Config);
+            allTableInstances.push(table2Instance);
+            renderTable(table2Instance, table2Instance.allData, table2Instance.csvHeaders);
         });
     </script>
 </body>
