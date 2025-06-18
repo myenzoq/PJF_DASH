@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PK PD TABLE</title>
+    <title>PK PD Tracker</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -37,7 +37,7 @@
 <body class="p-4 md:p-8">
 
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg">
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Project Hours Tracker</h1>
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">PK PD Tracker</h1>
 
         <!-- Global Date search input and reset button -->
         <div class="flex flex-col sm:flex-row items-center justify-between mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
@@ -166,18 +166,18 @@
                 });
 
                 // --- Date format standardization for the 'date' column ---
-                // This will try to convert DD/MM/YYYY to INSEE-MM-DD for consistent Date object creation
+                // This will try to convert DD/MM/YYYY to YYYY-MM-DD for consistent Date object creation
                 if (row.date) {
                     const dateParts = row.date.split(/[\/-]/); // Split by / or -
                     if (dateParts.length === 3) {
                         // Check for DD/MM/YYYY format based on typical length of parts (e.g., 17/06/2025)
                         if (dateParts[0].length === 2 && dateParts[1].length === 2 && dateParts[2].length === 4) {
-                            // Reformat to INSEE-MM-DD
+                            // Reformat to YYYY-MM-DD
                             row.date = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
                         }
-                        // If it's already INSEE-MM-DD (e.g., 2025-06-17), it's fine as is.
+                        // If it's already YYYY-MM-DD (e.g., 2025-06-17), it's fine as is.
                         // Other formats (e.g., M/D/YYYY) will rely on new Date() parsing directly,
-                        // which can be inconsistent across browsers but INSEE-MM-DD is robust.
+                        // which can be inconsistent across browsers but YYYY-MM-DD is robust.
                     }
                 }
                 // --- End Date format standardization ---
@@ -316,7 +316,7 @@
          * Filters all initialized tables based on the date selected in the global date input field.
          */
         function filterAllTablesByDate() {
-            const selectedDate = document.getElementById('date-search').value; // Gets date in INSEE-MM-DD format from input
+            const selectedDate = document.getElementById('date-search').value; // Gets date in YYYY-MM-DD format from input
             const searchDateObj = selectedDate ? new Date(selectedDate) : null;
 
             if (searchDateObj) {
