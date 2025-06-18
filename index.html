@@ -40,13 +40,19 @@
     <div class="w-full mx-auto bg-white p-6 rounded-xl shadow-lg">
         <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">PK PD Tracker</h1>
 
-        <!-- Global Date search input and reset button -->
-        <div class="flex flex-col sm:flex-row items-center justify-between mb-6 space-y-4 sm:space-y-0 sm:space-x-4">
-            <div class="relative w-full sm:w-1/2">
-                <label for="date-search" class="block text-gray-700 text-sm font-medium mb-2">Search by Date (ควบคุมทั้งสองตาราง):</label>
-                <input type="date" id="date-search" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 shadow-sm">
+        <!-- Global Date search inputs and reset button -->
+        <div class="flex flex-col md:flex-row items-center justify-between mb-6 space-y-4 md:space-y-0 md:space-x-4">
+            <div class="relative w-full md:w-1/2 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <div class="w-full sm:w-1/2">
+                    <label for="date-search" class="block text-gray-700 text-sm font-medium mb-2">วันที่เริ่มต้น:</label>
+                    <input type="date" id="date-search" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 shadow-sm">
+                </div>
+                <div class="w-full sm:w-1/2">
+                    <label for="date-search-end" class="block text-gray-700 text-sm font-medium mb-2">วันที่สิ้นสุด:</label>
+                    <input type="date" id="date-search-end" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 shadow-sm">
+                </div>
             </div>
-            <button id="reset-button" class="w-full sm:w-auto px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-200 shadow">
+            <button id="reset-button" class="w-full md:w-auto px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition duration-200 shadow">
                 Reset Filter (ล้างข้อมูลทั้งสองตาราง)
             </button>
         </div>
@@ -67,7 +73,7 @@
             </table>
         </div>
         <!-- Message displayed when no results match the filter for Table 1 -->
-        <div id="no-results-message-1" class="text-center text-gray-500 mt-4 hidden">No results found for the selected date.</div>
+        <div id="no-results-message-1" class="text-center text-gray-500 mt-4 hidden">No results found for the selected date range.</div>
     </div>
 
     <!-- Second Table Section -->
@@ -314,22 +320,33 @@
         }
 
         /**
-         * Filters all initialized tables based on the date selected in the global date input field.
+         * Filters all initialized tables based on the date range selected in the global date input fields.
          */
         function filterAllTablesByDate() {
-            const selectedDate = document.getElementById('date-search').value; // Gets date in YYYY-MM-DD format from input
-            const searchDateObj = selectedDate ? new Date(selectedDate) : null;
+            const startDateInput = document.getElementById('date-search').value;
+            const endDateInput = document.getElementById('date-search-end').value;
 
-            if (searchDateObj) {
-                // Normalize search date for consistent comparison
-                searchDateObj.setMinutes(searchDateObj.getMinutes() + searchDateObj.getTimezoneOffset());
-                console.log('Global Search Date (normalized):', searchDateObj.toISOString().split('T')[0]);
+            let startDateObj = null;
+            let endDateObj = null;
+
+            if (startDateInput) {
+                startDateObj = new Date(startDateInput);
+                startDateObj.setMinutes(startDateObj.getMinutes() + startDateObj.getTimezoneOffset());
+                console.log('Global Search Start Date (normalized):', startDateObj.toISOString().split('T')[0]);
+            }
+            if (endDateInput) {
+                endDateObj = new Date(endDateInput);
+                endDateObj.setMinutes(endDateObj.getMinutes() + endDateObj.getTimezoneOffset());
+                // For end date, set to end of day to include all data on that day
+                endDateObj.setHours(23, 59, 59, 999);
+                console.log('Global Search End Date (normalized):', endDateObj.toISOString());
             }
 
             allTableInstances.forEach(instance => {
-                if (!searchDateObj) {
-                    renderTable(instance, instance.allData, instance.csvHeaders); // If no date, show all data
-                    return;
+                // If neither date is selected, display all data
+                if (!startDateInput && !endDateInput) {
+                    renderTable(instance, instance.allData, instance.csvHeaders);
+                    return; // Move to the next instance
                 }
 
                 const filteredData = instance.allData.filter(row => {
@@ -344,10 +361,16 @@
 
                     rowDateObj.setMinutes(rowDateObj.getMinutes() + rowDateObj.getTimezoneOffset());
 
-                    const match = rowDateObj.getDate() === searchDateObj.getDate() &&
-                                  rowDateObj.getMonth() === searchDateObj.getMonth() &&
-                                  rowDateObj.getFullYear() === searchDateObj.getFullYear();
-                    return match;
+                    let isMatch = true;
+
+                    if (startDateObj) {
+                        isMatch = isMatch && (rowDateObj >= startDateObj);
+                    }
+                    if (endDateObj) {
+                        isMatch = isMatch && (rowDateObj <= endDateObj);
+                    }
+
+                    return isMatch;
                 });
                 renderTable(instance, filteredData, instance.csvHeaders);
             });
@@ -357,7 +380,8 @@
          * Resets the global date filter input and displays all original data for all tables.
          */
         function resetAllTablesFilter() {
-            document.getElementById('date-search').value = ''; // Clear the global date input field
+            document.getElementById('date-search').value = ''; // Clear the global start date input field
+            document.getElementById('date-search-end').value = ''; // Clear the global end date input field
             allTableInstances.forEach(instance => {
                 renderTable(instance, instance.allData, instance.csvHeaders); // Render all original data for each table
             });
@@ -366,6 +390,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             // Global event listeners for the single search and reset controls
             document.getElementById('date-search').addEventListener('change', filterAllTablesByDate);
+            document.getElementById('date-search-end').addEventListener('change', filterAllTablesByDate); // New event listener for end date
             document.getElementById('reset-button').addEventListener('click', resetAllTablesFilter);
 
             // Configuration for Table 1
